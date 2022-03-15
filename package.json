@@ -1,0 +1,28 @@
+{
+  "name": "lannister-pay",
+  "version": "1.0.0",
+  "description": "Technical assessment for a backend engineering role at Flutterwave.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MlkMahmud/lannister-pay.git"
+  },
+  "keywords": [],
+  "author": {
+    "name": "Malik Mahmud",
+    "email": "almalikmahmud@gmail.com"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MlkMahmud/lannister-pay/issues"
+  },
+  "homepage": "https://github.com/MlkMahmud/lannister-pay#readme",
+  "engineStrict": true,
+  "engines": {
+    "node": "^14 || ^16",
+    "npm": "^6 || ^8"
+  }
+}
