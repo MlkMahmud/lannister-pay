@@ -2,6 +2,7 @@ import Koa from 'koa';
 import bodyparser from 'koa-bodyparser';
 import helmet from 'koa-helmet';
 import Sentry from './lib/sentry';
+import router from './routes';
 
 const app = new Koa();
 
@@ -23,5 +24,7 @@ app.use(async (ctx, next) => {
 });
 app.use(helmet());
 app.use(bodyparser());
+app.use(router.routes());
+app.use(router.allowedMethods());
 
 export default app;

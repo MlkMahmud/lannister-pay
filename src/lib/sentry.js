@@ -1,9 +1,8 @@
 import * as Sentry from '@sentry/node';
-import config from 'config';
 
 Sentry.init({
-  dsn: config.get('sentry.dsn'),
-  enabled: config.get('sentry.enabled'),
+  dsn: process.env.SENTRY_DSN,
+  enabled: process.env.NODE_ENV === 'production',
 });
 
 export default Sentry;
