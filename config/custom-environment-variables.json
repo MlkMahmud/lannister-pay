@@ -1,4 +1,5 @@
 {
+  "port": "PORT",
   "redis": {
     "options": {
       "url": "REDIS_URL"
