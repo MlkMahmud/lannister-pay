@@ -1,0 +1,8 @@
+{
+  "redis": {
+    "options": {}
+  },
+  "sentry": {
+    "enabled": false
+  }
+}

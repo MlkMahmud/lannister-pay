@@ -1,0 +1,13 @@
+{
+  "redis": {
+    "options": {
+      "socket": {
+        "tls": true,
+        "rejectUnauthorized": false
+      }
+    }
+  },
+  "sentry": {
+    "enabled": true
+  }
+}

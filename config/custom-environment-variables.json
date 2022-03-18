@@ -1,0 +1,10 @@
+{
+  "redis": {
+    "options": {
+      "url": "REDIS_URL"
+    }
+  },
+  "sentry": {
+    "dsn": "SENTRY_DSN"
+  }
+}
