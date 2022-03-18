@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "@sentry/node": "^6.18.2",
+    "joi": "^17.6.0",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",
     "koa-helmet": "^6.1.0",

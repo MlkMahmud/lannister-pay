@@ -1,9 +1,15 @@
 import Router from 'koa-router';
+import controller from './controllers';
 
 const router = new Router();
 
 router.post('/fees', async (ctx) => {
-  ctx.body = { message: 'save fees to db' };
+  const { FeeConfigurationSpec } = ctx.request.body;
+  await controller.parseFeeConfiguration(FeeConfigurationSpec);
+  ctx.status = 200;
+  ctx.body = {
+    status: 'ok',
+  };
 });
 
 router.post('/compute-transaction-fee', async (ctx) => {

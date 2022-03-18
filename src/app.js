@@ -17,8 +17,10 @@ app.use(async (ctx, next) => {
   try {
     await next();
   } catch (err) {
-    ctx.status = err.status || 500;
-    ctx.body = 'Uh Oh! Something went wrong on my end, please try again later.';
+    ctx.status = err.statusCode || 500;
+    ctx.body = {
+      Error: err.message || 'Something went wrong on our end, please try again later.',
+    };
     app.emit('error', err, ctx);
   }
 });
