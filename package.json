@@ -4,6 +4,7 @@
   "description": "Technical assessment for a backend engineering role at Flutterwave.",
   "main": "index.js",
   "scripts": {
+    "build": "babel src -d dist --ignore \"src/**/__mocks__/**/*.js\" --source-maps",
     "dev": "cross-env NODE_ENV=development nodemon",
     "prepare": "husky install",
     "test": "jest --coverage"
