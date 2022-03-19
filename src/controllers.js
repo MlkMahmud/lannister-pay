@@ -73,6 +73,6 @@ export default {
       }
       return rankFeeConfiguration(configuration);
     }).sort((a, b) => b.rank - a.rank);
-    await redis.set('configurations', JSON.stringify(parsedConfigurations));
+    await redis.set('configurations', parsedConfigurations);
   },
 };

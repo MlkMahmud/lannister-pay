@@ -11,5 +11,14 @@ if (process.env.NODE_ENV === 'production') {
     rejectUnauthorized: false,
   };
 }
+const redis = createClient(redisOptions);
 
-export default createClient(redisOptions);
+export default {
+  async get(key, fallback = '') {
+    const value = await redis.get(key) || fallback;
+    return JSON.parse(value);
+  },
+  async set(key, value) {
+    await redis.set(key, JSON.stringify(value));
+  },
+};
