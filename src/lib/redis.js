@@ -19,9 +19,11 @@ export default {
   },
 
   async get(key, fallback = '') {
-    const value = await redis.get(key) || fallback;
-    return JSON.parse(value);
+    const value = await redis.get(key);
+    if (value) return JSON.parse(value);
+    return fallback;
   },
+
   async set(key, value) {
     await redis.set(key, JSON.stringify(value));
   },

@@ -58,10 +58,10 @@ function rankFeeConfiguration(configuration) {
 async function getMatchingFeeConfiguration(transaction) {
   const configurations = await redis.get('configurations', []);
   let unmatchedField;
-  const matchingConfiguration = configurations.find((configuration) => {
-    const {
-      currency, entity, entityProperty, locale,
-    } = configuration;
+
+  const matchingConfiguration = configurations.find(({
+    currency, entity, entityProperty, locale,
+  }) => {
     const { PaymentEntity } = transaction;
     const transactionLocale = transaction.CurrencyCountry === PaymentEntity.Country ? 'LOCL' : 'INTL';
     if (currency !== '*' && currency !== transaction.Currency) {
@@ -95,7 +95,7 @@ async function getMatchingFeeConfiguration(transaction) {
     return true;
   });
 
-  if (!matchingConfiguration) throw new HttpError(404, `No fee configuration for ${unmatchedField} transactions`);
+  if (!matchingConfiguration) throw new HttpError(404, `No fee configuration for ${unmatchedField || 'this'} transaction`);
   return matchingConfiguration;
 }
 
@@ -148,7 +148,7 @@ export default {
       .map((item) => {
         const [id, currency, locale, entity = '', , , feeType, feeValue] = item.split(' ');
         const match = entity.match(/(.*)\(([^)]+)\)/) || [];
-        const configuration = {
+        const { error, value } = feeConfigurationSchema.validate({
           id,
           currency,
           locale,
@@ -156,13 +156,12 @@ export default {
           entityProperty: match[2],
           feeType,
           feeValue,
-        };
-        const { error } = feeConfigurationSchema.validate(configuration);
+        });
         if (error) {
           const { message } = error.details[0];
           throw new HttpError(400, message);
         }
-        return rankFeeConfiguration(configuration);
+        return rankFeeConfiguration(value);
       })
       .sort((a, b) => b.rank - a.rank);
     await redis.set('configurations', parsedConfigurations);
