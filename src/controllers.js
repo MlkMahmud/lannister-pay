@@ -24,14 +24,14 @@ const feeConfigurationSchema = Joi.object({
     )
     .required(),
   entityProperty: Joi.alternatives().try(Joi.string(), Joi.number()).required(),
-  type: Joi.string().valid('FLAT', 'FLAT_PERC', 'PERC').required(),
-  value: Joi.when('type', {
+  feeType: Joi.string().valid('FLAT', 'FLAT_PERC', 'PERC').required(),
+  feeValue: Joi.when('feeType', {
     is: Joi.string().valid('FLAT', 'PERC'),
     then: Joi.number().required(),
-    otherwise: Joi.custom((value, helpers) => {
+    otherwise: Joi.custom((value, helper) => {
       const [flat, perc] = value.split(':');
-      if (!flat || Number.isNaN(flat) || !perc || Number.isNaN(perc)) {
-        return helpers.error('Fee configuration value is invalid');
+      if (!flat || Number.isNaN(Number(flat)) || !perc || Number.isNaN(Number(perc))) {
+        return helper.message({ custom: 'FLAT_PERC fee type requires fee value to match [FLAT-VALUE]:[PERC-VALUE]' });
       }
       return value;
     }),
@@ -56,7 +56,7 @@ export default {
       throw new HttpError(400, 'Invalid request payload');
     }
     const parsedConfigurations = configurations.split('\n').map((item) => {
-      const [id, currency, locale, entity = '', , , type, value] = item.split(' ');
+      const [id, currency, locale, entity = '', , , feeType, feeValue] = item.split(' ');
       const match = entity.match(/(.*)\(([^)]+)\)/) || [];
       const configuration = {
         id,
@@ -64,12 +64,13 @@ export default {
         locale,
         entity: match[1],
         entityProperty: match[2],
-        type,
-        value,
+        feeType,
+        feeValue,
       };
-      const { error } = feeConfigurationSchema.validate(configuration);
+      const { error } = feeConfigurationSchema.validate(configuration, { abortEarly: true });
       if (error) {
-        throw new HttpError(400, `Fee configuration ${id || ''} is invalid`);
+        const { message } = error.details[0];
+        throw new HttpError(400, message);
       }
       return rankFeeConfiguration(configuration);
     }).sort((a, b) => b.rank - a.rank);
