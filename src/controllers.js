@@ -1,5 +1,5 @@
-import Joi from 'joi';
 import redis from './lib/redis';
+import { feeConfigurationSchema } from './schemas';
 
 class HttpError extends Error {
   constructor(statusCode, message) {
@@ -7,43 +7,6 @@ class HttpError extends Error {
     this.statusCode = statusCode;
   }
 }
-
-const feeConfigurationSchema = Joi.object({
-  id: Joi.string().min(8).max(8).required(),
-  currency: Joi.string().valid('*', 'NGN').required(),
-  locale: Joi.string().valid('*', 'INTL', 'LOCL').required(),
-  entity: Joi.string()
-    .valid(
-      '*',
-      'CREDIT-CARD',
-      'DEBIT-CARD',
-      'BANK-ACCOUNT',
-      'USSD',
-      'WALLET-ID',
-    )
-    .required(),
-  entityProperty: Joi.alternatives().try(Joi.string(), Joi.number()).required(),
-  feeType: Joi.string().valid('FLAT', 'FLAT_PERC', 'PERC').required(),
-  feeValue: Joi.when('feeType', {
-    is: Joi.string().valid('FLAT', 'PERC'),
-    then: Joi.number().required(),
-    otherwise: Joi.custom((value, helper) => {
-      const [flat, perc] = value.split(':');
-      if (
-        !flat
-        || !perc
-        || Number.isNaN(Number(flat))
-        || Number.isNaN(Number(perc))
-      ) {
-        return helper.message({
-          custom:
-            'FLAT_PERC fee type requires fee value to match [FLAT-VALUE]:[PERC-VALUE]',
-        });
-      }
-      return value;
-    }),
-  }),
-});
 
 function rankFeeConfiguration(configuration) {
   const rankedConfiguration = { ...configuration, rank: 0 };
@@ -95,7 +58,15 @@ async function getMatchingFeeConfiguration(transaction) {
     return true;
   });
 
-  if (!matchingConfiguration) throw new HttpError(404, `No fee configuration for ${unmatchedField || 'this'} transaction`);
+  if (!matchingConfiguration) {
+    let errorMessage = 'No fee configuration for this transaction';
+    if (unmatchedField) {
+      errorMessage = `No fee configuration for ${unmatchedField} transactions`;
+    }
+
+    throw new HttpError(404, errorMessage);
+  }
+
   return matchingConfiguration;
 }
 

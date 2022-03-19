@@ -31,7 +31,7 @@ describe('/fees', () => {
         entity: 'CREDIT-CARD',
         entityProperty: 'VISA',
         feeType: 'PERC',
-        feeValue: '5.0',
+        feeValue: 5,
         rank: 7,
       },
       {
@@ -76,7 +76,7 @@ describe('/fees', () => {
     expect(response.status).toEqual(400);
     expect(response.body).toHaveProperty(
       'Error',
-      '"currency" is not allowed to be empty',
+      '"currency" must be one of [*, NGN]',
     );
   });
 
