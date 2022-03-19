@@ -17,11 +17,11 @@ app.use(async (ctx, next) => {
   try {
     await next();
   } catch (err) {
-    ctx.status = err.statusCode || 500;
-    ctx.body = {
-      Error: err.message || 'Something went wrong on our end, please try again later.',
-    };
-    app.emit('error', err, ctx);
+    const statusCode = err.statusCode || 500;
+    const message = statusCode < 500 ? err.message : 'Something went wrong on our end, please try again later.';
+    ctx.status = statusCode;
+    ctx.body = { Error: message };
+    if (statusCode >= 500) app.emit('error', err, ctx);
   }
 });
 app.use(helmet());
