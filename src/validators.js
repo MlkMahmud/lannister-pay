@@ -1,4 +1,34 @@
 import Joi from 'joi';
+import { alpha3ToAlpha2, isValid as isValidCountryCode } from 'i18n-iso-countries';
+import { countries } from 'countries-list';
+
+function validateCountry(countryCode, helpers) {
+  if (isValidCountryCode(countryCode)) {
+    return countryCode;
+  }
+  return helpers.message({ custom: `Country Code: ${countryCode} is invalid` });
+}
+
+function validateCurrency(transaction, helpers) {
+  const { Currency, CurrencyCountry } = transaction;
+  let countryCode = CurrencyCountry;
+  if (!isValidCountryCode(countryCode)) {
+    return helpers.message({ custom: `Country Code: ${countryCode} is invalid.` });
+  }
+  /*
+    Coutries list only supports alpha2 country codes
+    So convert alpha3codes to alpha2
+  */
+  if (countryCode.length > 2) {
+    countryCode = alpha3ToAlpha2(countryCode);
+  }
+  const country = countries[countryCode];
+  const currencies = country.currency.split(',');
+  if (!currencies.includes(Currency)) {
+    return helpers.message({ custom: `${country.name} does not support ${Currency}.` });
+  }
+  return Currency;
+}
 
 const ENTITIES = ['*', 'CREDIT-CARD', 'DEBIT-CARD', 'BANK-ACCOUNT', 'USSD', 'WALLET-ID'];
 
@@ -12,7 +42,7 @@ export const feeConfigurationSchema = Joi.object({
   feeValue: Joi.when('feeType', {
     is: Joi.string().valid('FLAT', 'PERC'),
     then: Joi.number().required(),
-    otherwise: Joi.custom((value, helper) => {
+    otherwise: Joi.custom((value, helpers) => {
       const [flat, perc] = value.split(':');
       if (
         !flat
@@ -20,7 +50,7 @@ export const feeConfigurationSchema = Joi.object({
         || Number.isNaN(Number(flat))
         || Number.isNaN(Number(perc))
       ) {
-        return helper.message({
+        return helpers.message({
           custom:
             'FLAT_PERC fee type requires fee value to match [FLAT-VALUE]:[PERC-VALUE]',
         });
@@ -30,16 +60,21 @@ export const feeConfigurationSchema = Joi.object({
   }),
 });
 
+/*
+  Ideally, currency and country code should be validated against
+  a list of coutries maintained by Lannister Pay.
+*/
+
 export const transactionSchema = Joi.object({
   ID: Joi.any(),
   Amount: Joi.number().min(0).required(),
   Currency: Joi.string().required(),
-  CurrencyCountry: Joi.string().required(),
+  CurrencyCountry: Joi.string().custom(validateCountry).required(),
   Customer: Joi.object({
     ID: Joi.any(),
     EmailAddress: Joi.string().email().allow(''),
     FullName: Joi.string().allow(''),
-    BearsFee: Joi.boolean().required(),
+    BearsFee: Joi.boolean().default(false),
   }),
   PaymentEntity: {
     ID: Joi.any(),
@@ -48,6 +83,6 @@ export const transactionSchema = Joi.object({
     Number: Joi.alternatives().try(Joi.string().allow(''), Joi.number()),
     SixID: Joi.alternatives().try(Joi.string().allow(''), Joi.number()),
     Type: Joi.string().valid(...ENTITIES).required(),
-    Country: Joi.string().required(),
+    Country: Joi.string().custom(validateCountry).required(),
   },
-});
+}).custom(validateCurrency);

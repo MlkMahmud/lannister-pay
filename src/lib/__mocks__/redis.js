@@ -3,12 +3,14 @@ const redis = new Map();
 export default {
   clear() {
     redis.clear();
-    return Promise.resolve();
   },
 
   get(key, fallback = '') {
-    const value = redis.get(key) || fallback;
-    return Promise.resolve(JSON.parse(value));
+    const value = redis.get(key);
+    if (value) {
+      return Promise.resolve(JSON.parse(value));
+    }
+    return Promise.resolve(fallback);
   },
 
   set(key, value) {

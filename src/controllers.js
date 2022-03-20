@@ -1,5 +1,5 @@
 import redis from './lib/redis';
-import { feeConfigurationSchema, transactionSchema } from './schemas';
+import { feeConfigurationSchema, transactionSchema } from './validators';
 
 class HttpError extends Error {
   constructor(statusCode, message) {

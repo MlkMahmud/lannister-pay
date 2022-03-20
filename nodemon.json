@@ -2,5 +2,5 @@
   "watch": ["src/"],
   "exec": "node -r esm src/index.js",
   "ext": "js",
-  "ignore": ["node_modules"]
+  "ignore": ["node_modules", "__tests__"]
 }
