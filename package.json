@@ -8,7 +8,8 @@
     "dev": "cross-env NODE_ENV=development nodemon",
     "prepare": "husky install",
     "test": "jest --coverage",
-    "start": "node dist/index | bunyan"
+    "start": "node dist/index | bunyan",
+    "upload-sourcemaps": "node scripts/upload-sourcemaps"
   },
   "repository": {
     "type": "git",
@@ -55,7 +56,8 @@
     "koa-helmet": "^6.1.0",
     "koa-response-time": "^2.1.0",
     "koa-router": "^10.1.1",
-    "redis": "^4.0.4"
+    "redis": "^4.0.4",
+    "shelljs": "^0.8.5"
   },
   "jest": {
     "modulePathIgnorePatterns": [
