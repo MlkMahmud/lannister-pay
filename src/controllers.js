@@ -1,5 +1,5 @@
 import redis from './lib/redis';
-import { feeConfigurationSchema } from './schemas';
+import { feeConfigurationSchema, transactionSchema } from './schemas';
 
 class HttpError extends Error {
   constructor(statusCode, message) {
@@ -59,9 +59,9 @@ async function getMatchingFeeConfiguration(transaction) {
   });
 
   if (!matchingConfiguration) {
-    let errorMessage = 'No fee configuration for this transaction';
+    let errorMessage = 'No fee configuration for this transaction.';
     if (unmatchedField) {
-      errorMessage = `No fee configuration for ${unmatchedField} transactions`;
+      errorMessage = `No fee configuration for ${unmatchedField} transactions.`;
     }
 
     throw new HttpError(404, errorMessage);
@@ -72,6 +72,12 @@ async function getMatchingFeeConfiguration(transaction) {
 
 export default {
   async computeTransactionFee(transaction) {
+    const { error } = transactionSchema.validate(transaction);
+    if (error) {
+      const { message } = error.details[0];
+      throw new HttpError(400, message);
+    }
+
     const { id, feeType, feeValue } = await getMatchingFeeConfiguration(transaction);
     const { Amount, Customer } = transaction;
     let AppliedFeeValue;
@@ -95,7 +101,7 @@ export default {
           Since we validate each configuration's fee type before saving it.
           However, if for some weird reason, it does, let's throw a 500 error.
         */
-        throw new Error(`Configuration id: ${id} has an invalid fee type: ${feeType}`);
+        throw new Error(`Fee configuration ${id} has an invalid fee type: ${feeType}`);
       }
     }
 
@@ -103,7 +109,7 @@ export default {
     const SettlementAmount = ChargeAmount - AppliedFeeValue;
 
     return {
-      AppliedFeeId: id,
+      AppliedFeeID: id,
       AppliedFeeValue,
       ChargeAmount,
       SettlementAmount,
