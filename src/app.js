@@ -1,6 +1,7 @@
 import Koa from 'koa';
 import bodyparser from 'koa-bodyparser';
 import helmet from 'koa-helmet';
+import responseTime from 'koa-response-time';
 import Sentry from './lib/sentry';
 import router from './routes';
 
@@ -13,6 +14,7 @@ app.on('error', async (err, ctx) => {
   });
 });
 
+app.use(responseTime());
 app.use(async (ctx, next) => {
   try {
     await next();
