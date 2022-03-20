@@ -120,7 +120,12 @@ export default {
     if (!configurations || typeof configurations !== 'string') {
       throw new HttpError(400, 'Invalid request payload');
     }
-    const parsedConfigurations = configurations
+    /*
+      Assessment does not specify how to deal with possible duplicate configurations
+      Ideally a configuration id should be unique and we should throw a duplicate key error.
+    */
+    const existingConfigurations = await redis.get('configurations', []);
+    const updatedConfigurations = configurations
       .split('\n')
       .map((item) => {
         const [id, currency, locale, entity = '', , , feeType, feeValue] = item.split(' ');
@@ -140,7 +145,8 @@ export default {
         }
         return rankFeeConfiguration(value);
       })
+      .concat(existingConfigurations)
       .sort((a, b) => b.rank - a.rank);
-    await redis.set('configurations', parsedConfigurations);
+    await redis.set('configurations', updatedConfigurations);
   },
 };
