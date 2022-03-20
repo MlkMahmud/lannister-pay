@@ -24,11 +24,15 @@ export default {
     return fallback;
   },
 
-  async set(key, value) {
-    await redis.set(key, JSON.stringify(value));
+  isOpen() {
+    return redis.isOpen;
   },
 
   async quit() {
-    await redis.quit();
+    await redis.QUIT();
+  },
+
+  async set(key, value) {
+    await redis.set(key, JSON.stringify(value));
   },
 };
