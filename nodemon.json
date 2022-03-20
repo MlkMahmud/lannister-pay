@@ -1,6 +1,6 @@
 {
   "watch": ["src/"],
-  "exec": "node -r esm src/index.js",
+  "exec": "node -r esm src/index.js | bunyan",
   "ext": "js",
   "ignore": ["node_modules", "__tests__"]
 }

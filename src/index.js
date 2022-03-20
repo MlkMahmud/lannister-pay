@@ -1,5 +1,6 @@
 import app from './app';
 import redis from './lib/redis';
+import logger from './lib/logger';
 
 const PORT = process.env.PORT || 3000;
 
@@ -7,11 +8,13 @@ const PORT = process.env.PORT || 3000;
   try {
     await redis.connect();
     app.listen(PORT, () => {
-      console.log(`> Running on port: ${PORT}`);
+      logger.info(`> Running on port: ${PORT}`);
     });
   } catch (e) {
-    console.error(e);
-    await redis.quit();
+    logger.error(e);
+    if (redis.isOpen()) {
+      await redis.quit();
+    }
     process.exit(1);
   }
 }());

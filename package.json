@@ -7,7 +7,8 @@
     "build": "babel src -d dist --ignore \"src/**/__mocks__/**/*.js\" --source-maps",
     "dev": "cross-env NODE_ENV=development nodemon",
     "prepare": "husky install",
-    "test": "jest --coverage"
+    "test": "jest --coverage",
+    "start": "node dist/index | bunyan"
   },
   "repository": {
     "type": "git",
@@ -45,12 +46,14 @@
   },
   "dependencies": {
     "@sentry/node": "^6.18.2",
+    "bunyan": "^1.8.15",
     "countries-list": "^2.6.1",
     "i18n-iso-countries": "^7.3.0",
     "joi": "^17.6.0",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",
     "koa-helmet": "^6.1.0",
+    "koa-response-time": "^2.1.0",
     "koa-router": "^10.1.1",
     "redis": "^4.0.4"
   },
