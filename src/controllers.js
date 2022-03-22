@@ -52,7 +52,7 @@ async function getMatchingFeeConfiguration(transaction) {
         PaymentEntity.SixID,
       ].includes(entityProperty))
     ) {
-      unmatchedField = entityProperty;
+      unmatchedField = `Payment Entity: ${PaymentEntity.ID}`;
       return false;
     }
     return true;
