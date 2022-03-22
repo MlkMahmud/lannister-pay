@@ -37,7 +37,15 @@ export const feeConfigurationSchema = Joi.object({
   currency: Joi.string().valid('*', 'NGN').required(),
   locale: Joi.string().valid('*', 'INTL', 'LOCL').required(),
   entity: Joi.string().valid(...ENTITIES).required(),
-  entityProperty: Joi.alternatives().try(Joi.string(), Joi.number()).required(),
+  entityProperty: Joi
+    .string()
+    .custom((value) => {
+      if (value.startsWith('0') || Number.isNaN(Number(value))) {
+        return value;
+      }
+      return Number(value);
+    })
+    .required(),
   feeType: Joi.string().valid('FLAT', 'FLAT_PERC', 'PERC').required(),
   feeValue: Joi.when('feeType', {
     is: Joi.string().valid('FLAT', 'PERC'),
