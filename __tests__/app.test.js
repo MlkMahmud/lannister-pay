@@ -33,7 +33,7 @@ describe('/fees', () => {
         entityProperty: 'VISA',
         feeType: 'PERC',
         feeValue: 5,
-        rank: 7,
+        rank: 5,
       },
       {
         id: 'LNPY1221',
@@ -43,7 +43,7 @@ describe('/fees', () => {
         entityProperty: '*',
         feeType: 'FLAT_PERC',
         feeValue: '20:1.4',
-        rank: 4,
+        rank: 1,
       },
     ]);
   });

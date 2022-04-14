@@ -10,9 +10,10 @@ class HttpError extends Error {
 
 function rankFeeConfiguration(configuration) {
   const rankedConfiguration = { ...configuration, rank: 0 };
-  Object.keys(rankedConfiguration).forEach((key) => {
-    if (key !== 'rank' && rankedConfiguration[key] !== '*') {
-      rankedConfiguration.rank += 1;
+  ['currency', 'locale', 'entity', 'entityProperty'].forEach((key) => {
+    if (rankedConfiguration[key] !== '*') {
+      if (key === 'entity') rankedConfiguration.rank += 2;
+      else rankedConfiguration.rank += 1;
     }
   });
   return rankedConfiguration;
