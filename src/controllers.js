@@ -1,5 +1,5 @@
 import redis from './lib/redis';
-import { feeConfigurationSchema, transactionSchema } from './validators';
+import { feeConfigurationSchema, transactionSchema, escapeCharacters } from './utils';
 
 class HttpError extends Error {
   constructor(statusCode, message) {
@@ -20,55 +20,24 @@ function rankFeeConfiguration(configuration) {
 }
 
 async function getMatchingFeeConfiguration(transaction) {
-  const configurations = await redis.get('configurations', []);
-  let unmatchedField;
+  const { Currency, CurrencyCountry, PaymentEntity } = transaction;
+  const locale = CurrencyCountry === PaymentEntity.Country ? 'LOCL' : 'INTL';
+  const entityProperties = escapeCharacters([
+    PaymentEntity.ID,
+    PaymentEntity.Issuer,
+    PaymentEntity.Brand,
+    PaymentEntity.Number,
+    PaymentEntity.SixID,
+  ].join('|'));
+  const query = `@currency:(X|${Currency}) @entity:(X|${escapeCharacters(PaymentEntity.Type)}) @locale:(X|${locale}) @entityProperty:(X|${entityProperties})`;
+  const { documents, total } = await redis.ft.search('idx:configurations', query, { NOSTOPWORDS: true });
 
-  const matchingConfiguration = configurations.find(({
-    currency, entity, entityProperty, locale,
-  }) => {
-    const { PaymentEntity } = transaction;
-    const transactionLocale = transaction.CurrencyCountry === PaymentEntity.Country ? 'LOCL' : 'INTL';
-    if (currency !== '*' && currency !== transaction.Currency) {
-      unmatchedField = transaction.Currency;
-      return false;
-    }
-
-    if (entity !== '*' && entity !== PaymentEntity.Type) {
-      unmatchedField = PaymentEntity.Type;
-      return false;
-    }
-
-    if (locale !== '*' && locale !== transactionLocale) {
-      unmatchedField = transactionLocale;
-      return false;
-    }
-
-    if (
-      entityProperty !== '*'
-      && !([
-        PaymentEntity.ID,
-        PaymentEntity.Issuer,
-        PaymentEntity.Brand,
-        PaymentEntity.Number,
-        PaymentEntity.SixID,
-      ].includes(entityProperty))
-    ) {
-      unmatchedField = `Payment Entity: ${PaymentEntity.ID}`;
-      return false;
-    }
-    return true;
-  });
-
-  if (!matchingConfiguration) {
-    let errorMessage = 'No fee configuration for this transaction.';
-    if (unmatchedField) {
-      errorMessage = `No fee configuration for ${unmatchedField} transactions.`;
-    }
-
-    throw new HttpError(404, errorMessage);
+  if (!total) {
+    throw new HttpError(404, 'No fee configuration for this transaction.');
   }
+  const [matchingConfiguration] = documents.sort((a, b) => b.value.rank - a.value.rank);
 
-  return matchingConfiguration;
+  return matchingConfiguration.value;
 }
 
 export default {
@@ -79,7 +48,9 @@ export default {
       throw new HttpError(400, message);
     }
 
-    const { id, feeType, feeValue } = await getMatchingFeeConfiguration(transaction);
+    const { id, feeType, feeValue } = await getMatchingFeeConfiguration(
+      transaction,
+    );
     const { Amount, Customer } = transaction;
     let AppliedFeeValue;
     switch (feeType) {
@@ -93,7 +64,7 @@ export default {
       }
       case 'FLAT_PERC': {
         const [flat, perc] = feeValue.split(':');
-        AppliedFeeValue = Number(flat) + ((Number(perc) * Amount) / 100);
+        AppliedFeeValue = Number(flat) + (Number(perc) * Amount) / 100;
         break;
       }
       default: {
@@ -102,7 +73,9 @@ export default {
           Since we validate each configuration's fee type before saving it.
           However, if for some weird reason, it does, let's throw a 500 error.
         */
-        throw new Error(`Fee configuration ${id} has an invalid fee type: ${feeType}`);
+        throw new Error(
+          `Fee configuration ${id} has an invalid fee type: ${feeType}`,
+        );
       }
     }
 
@@ -117,37 +90,45 @@ export default {
     };
   },
 
-  async parseFeeConfiguration(configurations) {
-    if (!configurations || typeof configurations !== 'string') {
+  async parseFeeConfiguration(payload = '') {
+    if (!payload || typeof payload !== 'string') {
       throw new HttpError(400, 'Invalid request payload');
     }
     /*
       Assessment does not specify how to deal with possible duplicate configurations
       Ideally a configuration id should be unique and we should throw a duplicate key error.
     */
-    const existingConfigurations = await redis.get('configurations', []);
-    const updatedConfigurations = configurations
-      .split('\n')
-      .map((item) => {
-        const [id, currency, locale, entity = '', , , feeType, feeValue] = item.split(' ');
-        const match = entity.match(/(.*)\(([^)]+)\)/) || [];
-        const { error, value } = feeConfigurationSchema.validate({
-          id,
-          currency,
-          locale,
-          entity: match[1],
-          entityProperty: match[2],
-          feeType,
-          feeValue,
-        });
-        if (error) {
-          const { message } = error.details[0];
-          throw new HttpError(400, message);
-        }
-        return rankFeeConfiguration(value);
-      })
-      .concat(existingConfigurations)
-      .sort((a, b) => b.rank - a.rank);
-    await redis.set('configurations', updatedConfigurations);
+    const configurations = payload.split('\n').map((item) => {
+      const [id, currency, locale, entity = '', , , feeType, feeValue] = item.split(' ');
+      const match = entity.match(/(.*)\(([^)]+)\)/) || [];
+      const { error, value } = feeConfigurationSchema.validate({
+        id,
+        currency,
+        locale,
+        entity: match[1],
+        entityProperty: match[2],
+        feeType,
+        feeValue,
+      });
+      if (error) {
+        const { message } = error.details[0];
+        throw new HttpError(400, message);
+      }
+      return rankFeeConfiguration(value);
+    });
+    await Promise.all(
+      configurations.map((configuration) => (
+        redis.json.set(`configurations:${configuration.id}`, '$', {
+          id: configuration.id,
+          currency: escapeCharacters(configuration.currency),
+          locale: escapeCharacters(configuration.locale),
+          entity: escapeCharacters(configuration.entity),
+          entityProperty: escapeCharacters(configuration.entityProperty),
+          feeType: configuration.feeType,
+          feeValue: configuration.feeValue,
+          rank: configuration.rank,
+        })
+      )),
+    );
   },
 };

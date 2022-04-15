@@ -47,6 +47,8 @@
     "supertest": "^6.2.2"
   },
   "dependencies": {
+    "@node-redis/json": "^1.0.2",
+    "@node-redis/search": "^1.0.5",
     "@sentry/node": "^6.18.2",
     "bunyan": "^1.8.15",
     "countries-list": "^2.6.1",
