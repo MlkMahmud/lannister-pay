@@ -96,3 +96,7 @@ export function escapeCharacters(word) {
     return `\\${match}`;
   });
 }
+
+export function isEmptyString(value) {
+  return value === '';
+}

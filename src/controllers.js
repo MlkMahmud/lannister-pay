@@ -1,5 +1,10 @@
 import redis from './lib/redis';
-import { feeConfigurationSchema, transactionSchema, escapeCharacters } from './utils';
+import {
+  escapeCharacters,
+  feeConfigurationSchema,
+  isEmptyString,
+  transactionSchema,
+} from './utils';
 
 class HttpError extends Error {
   constructor(statusCode, message) {
@@ -22,14 +27,15 @@ function rankFeeConfiguration(configuration) {
 async function getMatchingFeeConfiguration(transaction) {
   const { Currency, CurrencyCountry, PaymentEntity } = transaction;
   const locale = CurrencyCountry === PaymentEntity.Country ? 'LOCL' : 'INTL';
-  const entityProperties = escapeCharacters([
-    PaymentEntity.ID,
-    PaymentEntity.Issuer,
-    PaymentEntity.Brand,
-    PaymentEntity.Number,
-    PaymentEntity.SixID,
-  ].join('|'));
-  const query = `@currency:(X|${Currency}) @entity:(X|${escapeCharacters(PaymentEntity.Type)}) @locale:(X|${locale}) @entityProperty:(X|${entityProperties})`;
+  const entityProperties = [
+    ...(isEmptyString(PaymentEntity.ID) ? [] : [PaymentEntity.ID]),
+    ...(isEmptyString(PaymentEntity.Issuer) ? [] : [PaymentEntity.Issuer]),
+    ...(isEmptyString(PaymentEntity.Brand) ? [] : [PaymentEntity.Brand]),
+    ...(isEmptyString(PaymentEntity.Number) ? [] : [PaymentEntity.Number]),
+    ...(isEmptyString(PaymentEntity.SixID) ? [] : [PaymentEntity.SixID]),
+  ];
+  const entityPropQuery = escapeCharacters(entityProperties.join('|'));
+  const query = `@currency:(X|${Currency}) @entity:(X|${escapeCharacters(PaymentEntity.Type)}) @locale:(X|${locale}) @entityProperty:(X|${entityPropQuery})`;
   const { documents, total } = await redis.ft.search('idx:configurations', query, { NOSTOPWORDS: true });
 
   if (!total) {
