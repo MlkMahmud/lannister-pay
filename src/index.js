@@ -1,13 +1,13 @@
 import os from 'os';
 import app from './app';
-import redis from './lib/redis';
+import redis, { startRedis } from './lib/redis';
 import logger from './lib/logger';
 
 const PORT = process.env.PORT || 3000;
 
 (async function start() {
   try {
-    await redis.connect();
+    await startRedis();
     const server = app.listen(PORT, () => {
       logger.info(
         '> Lannister Pay is listening at http://%s:%s - env %s',
@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 3000;
     });
   } catch (e) {
     logger.error(e);
-    if (redis.isOpen()) {
+    if (redis.isOpen) {
       await redis.quit();
     }
     process.exit(1);

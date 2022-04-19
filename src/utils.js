@@ -37,15 +37,7 @@ export const feeConfigurationSchema = Joi.object({
   currency: Joi.string().valid('*', 'NGN').required(),
   locale: Joi.string().valid('*', 'INTL', 'LOCL').required(),
   entity: Joi.string().valid(...ENTITIES).required(),
-  entityProperty: Joi
-    .string()
-    .custom((value) => {
-      if (value.startsWith('0') || Number.isNaN(Number(value))) {
-        return value;
-      }
-      return Number(value);
-    })
-    .required(),
+  entityProperty: Joi.string().required(),
   feeType: Joi.string().valid('FLAT', 'FLAT_PERC', 'PERC').required(),
   feeValue: Joi.when('feeType', {
     is: Joi.string().valid('FLAT', 'PERC'),
@@ -94,3 +86,17 @@ export const transactionSchema = Joi.object({
     Country: Joi.string().custom(validateCountry).required(),
   },
 }).custom(validateCurrency);
+
+export function escapeCharacters(word) {
+  return word.replace(/[*-]/g, (match) => {
+    if (match === '*') {
+      // redis search will not index a wildcard character
+      return 'X';
+    }
+    return `\\${match}`;
+  });
+}
+
+export function isEmptyString(value) {
+  return value === '';
+}
