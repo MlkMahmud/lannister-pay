@@ -36,5 +36,3 @@ jobs:
 
       - name: Run all tests
         run: npm test
-        env:
-          REDIS_URL: redis://:@redis:6379
